@@ -11,37 +11,18 @@ pub fn solution() {
 
 }
 
-fn part_1(measurements: Vec<i32>) -> i32 {
-	let mut maybe_previous : Option<i32> = None;
-    let mut increased_measurements = 0;
-
-	for measurement in measurements {
-	    match maybe_previous {
-	        Some(previous) => if measurement > previous { increased_measurements += 1; },
-	        None => {},
-	    }
-	    maybe_previous = Some(measurement);
-	}
-	return increased_measurements;
+fn part_1(measurements: Vec<u64>) -> usize {
+	return measurements.windows(2).filter(|x| x[1] > x[0]).count();
 }
 
-fn part_2(measurements: Vec<i32>) -> i32 {
-	let mut maybe_previous_window : Option<i32> = None;
-	let mut increased_measurements = 0;
-
-	for i in 2..measurements.len() {
-		let window_sum = measurements[i] + measurements[i-1] + measurements[i-2];
-		match maybe_previous_window {
-			Some(previous) => if window_sum > previous { increased_measurements += 1; },
-			None => {},
-		}
-		maybe_previous_window = Some(window_sum);
-	}
-	return increased_measurements;
+fn part_2(measurements: Vec<u64>) -> usize {
+	// Comparing the sum of triples: [A B C] [B C D]. 
+	// We can inspect just the first element of the first triple and last element of second.
+	return measurements.windows(4).filter(|x| (x[3]) > x[0]).count()
 }
 
-fn read_numbers(file_path:String) -> Vec<i32> {
-    let mut inputs: Vec<i32> = Vec::new();
+fn read_numbers(file_path:String) -> Vec<u64> {
+    let mut inputs: Vec<u64> = Vec::new();
     if let Ok(lines) = read_lines(file_path) {
         for line in lines {
         	if let Ok(value) = line {
