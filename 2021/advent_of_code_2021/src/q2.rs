@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+
 pub fn solution() {
 
     let instructions = parse_instructions();
@@ -68,6 +70,7 @@ fn part_2(instructions: &Vec<Instruction>) -> u64 {
             Instruction::Up(x)      => submarine_position.aim -= x
         }
     }
-    return submarine_position.horizontal * submarine_position.depth;}
+    return submarine_position.horizontal * submarine_position.depth;
+}
 
 

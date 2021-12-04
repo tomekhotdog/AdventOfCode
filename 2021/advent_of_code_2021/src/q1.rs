@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+
 pub fn solution() {
 
     let inputs = read_input();
