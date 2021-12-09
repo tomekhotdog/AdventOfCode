@@ -10,7 +10,7 @@ pub fn solution() {
 }
 
 fn get_input() -> Vec<String> {
-        let input = include_str!("../inputs/q6_q.txt");
+        let input = include_str!("../inputs/q6_a.txt");
         input
             .trim()
             .split('\n')

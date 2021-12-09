@@ -14,7 +14,7 @@ fn main() {
 	// q2::solution();
 	// q3::solution();
 	// q4::solution();
-	// q5::solution();
+	q5::solution();
 	q6::solution();
 
 }
