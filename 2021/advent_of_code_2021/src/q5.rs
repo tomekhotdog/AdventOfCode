@@ -1,8 +1,7 @@
-#[allow(dead_code)]
-
 use std::cmp;
 use std::collections::HashMap;
 
+#[allow(dead_code)]
 
 pub fn solution() {
 
