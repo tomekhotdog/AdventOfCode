@@ -6,6 +6,7 @@ mod q4;
 mod q5;
 mod q6;
 mod q7;
+mod q8;
 
 fn main() {
 
@@ -17,7 +18,8 @@ fn main() {
 	// q4::solution();
 	// q5::solution();
 	// q6::solution();
-	q7::solution();
+	// q7::solution();
+	q8::solution();
 
 
 }
