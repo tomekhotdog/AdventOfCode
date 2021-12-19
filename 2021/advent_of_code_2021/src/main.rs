@@ -10,7 +10,7 @@ mod q8;
 
 fn main() {
 
-	println!("AdventOfCode2021!");
+	println!("AdventOfCode2021!!");
 
 	// q1::solution();
 	// q2::solution();
