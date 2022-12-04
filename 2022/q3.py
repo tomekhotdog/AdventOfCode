@@ -1,13 +1,11 @@
-import string
 from typing import List
 from main import read_input
-
-ALL_CHARS = string.ascii_letters
+import string
 
 
 # Given a list of strings return the single character that appears in all strings.
 def find_duplicate_char(compartments: List[str]) -> chr:
-    duplicates = set(ALL_CHARS)
+    duplicates = set(string.ascii_letters)
     [duplicates := duplicates.intersection(set(compartment)) for compartment in compartments]
     if len(duplicates) != 1:
         raise Exception("Multiple duplicates found! " + str(duplicates))
