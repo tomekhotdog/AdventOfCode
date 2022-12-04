@@ -1,7 +1,8 @@
+import string
 from typing import List
 from main import read_input
 
-ALL_CHARS = "abcdefghijlmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+ALL_CHARS = string.ascii_letters
 
 
 # Given a list of strings return the single character that appears in all strings.
@@ -32,11 +33,11 @@ def item_priority(item: chr) -> int:
 
 
 def part1():
-    inputs = read_input("q3.txt")
-    return sum([item_priority(find_rucksack_duplicate(rucksack)) for rucksack in inputs])
+    rucksacks = read_input("q3.txt")
+    return sum(list(map(lambda rucksack: item_priority(find_rucksack_duplicate(rucksack)), rucksacks)))
 
 
 def part2():
-    inputs = read_input("q3.txt")
-    grouped = [inputs[i:i + 3] for i in range(0, len(inputs), 3)]
-    return sum([item_priority(find_duplicate_char(group)) for group in grouped])
+    rucksacks = read_input("q3.txt")
+    grouped = [rucksacks[i:i + 3] for i in range(0, len(rucksacks), 3)]
+    return sum(list(map(lambda group: item_priority(find_duplicate_char(group)), grouped)))
