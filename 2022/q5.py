@@ -1,4 +1,3 @@
-from collections import deque
 from typing import List
 from main import read_input_string
 from enum import Enum
@@ -25,43 +24,42 @@ class MoveInstruction:
 
 
 # Represent each stack as a deque of chars.
-def parse_stacks(stack_lines: List[str]) -> List[deque]:
+def parse_stacks(stack_lines: List[str]) -> List[List[str]]:
     stacks = []
     for line in stack_lines:
-        # elems = line.split()
-        # TODO: Only works if crate label is one character long.
+        # Assume the crate label appears every 4 characters along from index 1.
         for index in range(1, len(line), 4):
-            # item = elem.split('[')[1].split(']')[0]
             item = line[index]
             stack_index = (index - 1) // 4
             if item != ' ':
                 while len(stacks) <= stack_index:
-                    stacks.append(deque())
+                    stacks.append([])
                 stacks[stack_index].append(item)
     return stacks
 
 
-def apply_instruction(stacks: List[deque], instruction: MoveInstruction, version: CrateMoverVersion) -> None:
+def apply_instruction(stacks: List[List[str]], instruction: MoveInstruction, version: CrateMoverVersion) -> None:
     match version:
         case CrateMoverVersion.VERSION_9000:
             for _ in range(instruction.move_n):
-                stacks[instruction.to_index].appendleft(stacks[instruction.from_index].popleft())
+                stacks[instruction.to_index].insert(0, (stacks[instruction.from_index].pop(0)))
             return
         case CrateMoverVersion.VERSION_9001:
-            crates = deque()
+            crates = []
             for _ in range(instruction.move_n):
-                crates.appendleft(stacks[instruction.from_index].popleft())
+                crates.append(stacks[instruction.from_index].pop(0))
+            crates.reverse()
             for crate in crates:
-                stacks[instruction.to_index].appendleft(crate)
+                stacks[instruction.to_index].insert(0, crate)
             return
 
 
-def apply_instructions(stacks: List[deque], instructions: List[str], version: CrateMoverVersion) -> None:
+def apply_instructions(stacks: List[List[str]], instructions: List[str], version: CrateMoverVersion) -> None:
     for instruction in instructions:
         apply_instruction(stacks, MoveInstruction(instruction), version)
 
 
-def read_top_of_stacks(stacks: List[deque]) -> str:
+def read_top_of_stacks(stacks: List[List[str]]) -> str:
     return ''.join([stack[0] if len(stack) > 0 else '' for stack in stacks])
 
 
