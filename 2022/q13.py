@@ -139,7 +139,7 @@ def part2():
     divider_packet_1 = parse_packet("[[2]]")
     divider_packet_2 = parse_packet("[[6]]")
     packets += [divider_packet_1, divider_packet_2]
-    
+
     packets = sorted(packets, key=cmp_to_key(compare_packets_function))
 
     divider_packet_1_index = packets.index(divider_packet_1) + 1
