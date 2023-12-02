@@ -1,4 +1,3 @@
-from typing import List
 from main import read_input
 
 digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -54,7 +53,3 @@ def part1() -> int:
 def part2() -> int:
     lines = read_input('q1.txt')
     return sum(list(map(lambda x: extract_calibration(x, True), lines)))
-
-
-print(part1())
-print(part2())
