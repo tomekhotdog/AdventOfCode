@@ -68,7 +68,7 @@ def calculate_gear_ratio(grid_width: int, gear_index: int, parts: List[Part]):
     adjacent_parts = list(filter(lambda x: x.is_adjacent(grid_width, gear_index), parts))
     # Gear-ratio is only well defined in the case of two adjacent parts.
     if len(adjacent_parts) == 2:
-        return reduce(lambda x, y: x.value * y.value, adjacent_parts)
+        return reduce(lambda x, y: x.raw_value * y.raw_value, adjacent_parts)
     return 0
 
 
