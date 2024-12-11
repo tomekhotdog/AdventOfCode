@@ -34,7 +34,7 @@ def part1() -> int:
     rules = [Rule(x) for x in elems[0].split('\n')]
     updates = list(map(lambda update: [int(x) for x in update.split(',')], elems[1].split('\n')))
     correct_updates = list(filter(lambda update: update == fix_ordering(update, rules), updates))
-    middle_numbers = list(map(lambda update: update[int(len(update)/2)], correct_updates))
+    middle_numbers = list(map(lambda update: update[int(len(update) / 2)], correct_updates))
     return sum(middle_numbers)
 
 
