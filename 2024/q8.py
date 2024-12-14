@@ -90,8 +90,6 @@ def identify_antinodes(grid: [[]], antennas: List[Antenna], resonance_enabled: b
             antinodes += antinodes_for_pair
     return antinodes
 
-
-
 def print_grid(grid: [[]]):
     for y in range(len(grid)):
         line = ''
