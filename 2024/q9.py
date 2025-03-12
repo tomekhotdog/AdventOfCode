@@ -113,5 +113,5 @@ def part2() -> int:
 
 
 print(part1())
-# Execution ~2mins.
+# Execution for part takes ~2mins. Should model free space and files explicitly for more scalable approach.
 print(part2())
