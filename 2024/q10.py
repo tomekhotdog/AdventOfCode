@@ -36,7 +36,9 @@ def print_topographic_map(topographic_map: [[]]):
     for y in range(len(topographic_map)):
         line = ''
         for x in range(len(topographic_map[0])):
-            line += f"{topographic_map[y][x]}"
+            value = topographic_map[y][x]
+            visualisation = f"{value}" if 0 <= value <= 9 else '.'
+            line += visualisation
         print(line)
 
 # Defined to be locations with zero elevation.
@@ -51,7 +53,7 @@ def find_trailheads(topographic: [[]]):
 def in_bounds(topographic: [[]], location: Coordinates):
     return 0 <= location.X < len(topographic[0]) and 0 <= location.Y < len(topographic)
 
-def find_hiking_trails(topographic: [[]], trailhead: Coordinates) -> [[Coordinates]]:
+def find_hiking_trails(topographic: [[]], trailhead: Coordinates, distinct: bool) -> [[Coordinates]]:
     trails = [[trailhead]]
     finished_trails = []
     visited = { trailhead }
@@ -65,8 +67,15 @@ def find_hiking_trails(topographic: [[]], trailhead: Coordinates) -> [[Coordinat
                 Coordinates(latest.X, latest.Y + 1),
                 Coordinates(latest.X, latest.Y - 1)
             ]
+
+            # Check whether next candidate has already been visited to satisfy trail distinctness.
+            distinct_trail = lambda c: not c in visited
+            possible_next = lambda c: in_bounds(topographic, c) and topographic[c.Y][c.X] == (topographic[latest.Y][latest.X] + 1)
+            accept_candidate = lambda c: possible_next(c) and distinct_trail(c) if distinct else possible_next(c)
+
             # Find next possible trail positions.
-            accepted = list(filter(lambda c: in_bounds(topographic, c) and not c in visited and topographic[c.Y][c.X] == (topographic[latest.Y][latest.X] + 1), candidates))
+            accepted = list(filter(accept_candidate, candidates))
+
             if any(accepted):
                 for a in accepted:
                     # Add extended trail to updated list.
@@ -82,25 +91,18 @@ def find_hiking_trails(topographic: [[]], trailhead: Coordinates) -> [[Coordinat
     hiking_trails = list(filter(lambda x: len(x) == 10, finished_trails))
     return hiking_trails
 
-def part1() -> int:
-    topographic = parse_topographic_map('q10.txt')
-    print_topographic_map(topographic)
+def solve(filename: str, distinct_trails, print_map: bool):
+    topographic = parse_topographic_map(filename)
+    if print_map:
+        print_topographic_map(topographic)
     trailheads = find_trailheads(topographic)
-    # for trailhead in trailheads:
-    #     hiking_trails = find_hiking_trails(topographic, trailhead)
-    #     print(len(hiking_trails))
+    return sum(map(lambda x: len(find_hiking_trails(topographic, x, distinct_trails)), trailheads))
 
-    return sum(map(lambda x: len(find_hiking_trails(topographic, x)), trailheads))
+def part1() -> int:
+    return solve('q10.txt', True, False)
 
 def part2() -> int:
-    topographic = parse_topographic_map('q10_example4.txt')
-    print_topographic_map(topographic)
-    trailheads = find_trailheads(topographic)
-    for trailhead in trailheads:
-        hiking_trails = find_hiking_trails(topographic, trailhead)
-        print(len(hiking_trails))
+    return solve('q10.txt', False, False)
 
-    return 0
-
-
+print(part1())
 print(part2())
