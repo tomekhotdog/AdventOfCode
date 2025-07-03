@@ -141,7 +141,6 @@ def derive_regions(raw):
     # Construct {id: Region()} from intermediary structure.
     return { region_id: Region(region_id, crop, plots) for (region_id, crop), plots in regions.items()}
 
-
 def part1() -> int:
     regions = derive_regions(read_input('q12.txt'))
     return sum([fence_price(region) for region in regions.values()])
