@@ -102,8 +102,8 @@ def parse_input(filename):
 
 """
 Deep breaths... summoning 1st year hardware course... what was a D flip-flop again?
-Our circuit is a broken 46 bit adder. The way this works is we work from least to
-most significant bits, XOR the inputs (starting from x00, y00) and carry forward (AND). 
+Our circuit is a broken 46 bit adder. The way this works is we go from least to most
+significant bit (starting from x00, y00), XOR the inputs and carry forward (AND inputs). 
 
 The circuit can therefore be split into sections that calculate the nth output bit (Zn):
                                  
@@ -155,6 +155,8 @@ def suspicious_wires_for_z_block(z_wire_id: str, circuit: Circuit):
 
 def suspicious_wires(circuit: Circuit):
     suspicious = []
+    # A bit untidy, but some special cases apply for the extreme bits
+    # which were not required for the solution.
     for i in range(44, 1, -1):
         z_wire_id = f'z{i}' if i >= 10 else f'z0{i}'
         suspicious += suspicious_wires_for_z_block(z_wire_id, circuit)
