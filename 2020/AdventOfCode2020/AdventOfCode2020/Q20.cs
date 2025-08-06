@@ -10,349 +10,276 @@ namespace AdventOfCode2020
         {
             var inputs = Tools.GetInput(20, false);
             var tiles = ParseTiles(inputs);
-            // var productOfCornerTiles = Part1(tiles);
-            // Console.WriteLine($"Part 1: {productOfCornerTiles}");
-            var arrangement = Arrange(tiles, null);
-            Console.WriteLine($"Part 2:");
+            var arrangement = Arrange(tiles);
+            Console.WriteLine($"Part 1: {Part1(arrangement)}");
+            Console.WriteLine($"Part 2: {Part2(arrangement)}");
         }
 
-        private static long Part1(Tile[] tiles)
+        private static ulong Part1(Arrangement arrangement)
         {
-            // Corner tiles have (at least) 2 matching borders.
-            var tilesWithNMatchingBorders = AnalyseTiles(tiles);
-            var cornerTiles = tilesWithNMatchingBorders[2];
-            Console.WriteLine($"Corner tiles: {string.Join(",", cornerTiles)}");
-            return cornerTiles.Select(t => t.TileId).Aggregate(1L, (acc, val) => acc * val);
+            return arrangement.ProductOfCornerTileIds();
+        }
+        
+        private static int Part2(Arrangement arrangement)
+        {
+            var extracted = arrangement.ExtractImage();
+            var combinedImageTile = new Tile(extracted.ToList(), 0);
+            var seaMonsters = TileOrientation.AllOrientations()
+                .Max(o => SeaMonstersInImage(combinedImageTile.ApplyOrientation(o)));
+            var allHashes = string.Join("", combinedImageTile.Raw).Count(c => c == '#');
+            const int elementsInSeaMonster = 15;
+            return allHashes - (seaMonsters * elementsInSeaMonster);
         }
 
-        private static Tile[,] Arrange(Tile[] tiles, ArrangedBorders? outerLayer)
+        private static int SeaMonstersInImage(string[] image)
         {
-            var dimensions = (int) Math.Sqrt(tiles.Length);
-            if (Math.Pow(dimensions, 2) - tiles.Length > 1e-6) throw new Exception($"Tile arrangement not square! (#{tiles.Length} tiles)");
-            var arrangement = new Tile[dimensions,dimensions];
-
-            if (tiles.Length == 1)
+            const int seaMonsterWidth = 20;
+            const int seaMonsterHeight = 2;
+            var seaMonsters = 0;
+            for (var y = 0; y < image.Length - seaMonsterHeight; y++)
             {
-                var t = ArrangeBorders(tiles.ToList(), tiles.ToList(), outerLayer);
-                arrangement[0, 0] = OrientFinalCentreTile(tiles.First(), outerLayer);
-                return arrangement;
-            }
-            
-            var tilesWithNMatchingBorders = AnalyseTiles(tiles);
-            var cornerTiles = tilesWithNMatchingBorders[2];
-            var edgeTiles = tilesWithNMatchingBorders[3];
-            var centreTiles = tilesWithNMatchingBorders[4];
-            
-            var arrangedBorders = ArrangeBorders(cornerTiles, edgeTiles, outerLayer);
-            arrangement = OrientTilesInBorders(arrangedBorders, outerLayer, arrangement);
-            var arrangedCentreTiles = Arrange(centreTiles.ToArray(), arrangedBorders);
-            // Insert arranged centre tiles to arrangement.
-            for (var i = 0; i < arrangedCentreTiles.Length; i++)
-            {
-                for (var j = 0; j < arrangedCentreTiles.Length; j++)
+                for (var x = 0; x < image.Length - seaMonsterWidth; x++)
                 {
-                    arrangement[i+1,j+1] = arrangedCentreTiles[i, j];
+                    seaMonsters = SeaMonsterAtOffset(new Coordinates(x, y), image) ? seaMonsters + 1 : seaMonsters;
                 }
             }
-
-            return arrangement;
+            return seaMonsters;
         }
 
-        // Extracts the borders: top, right, bottom, left.
-        public static ArrangedBorders ArrangeBorders(List<Tile> cornerTiles, List<Tile> edgeTiles, ArrangedBorders? outerLayer)
+        // Starting at $, checks the coordinates offsets to determine if there is a sea monster at the location.
+        // $                 # 
+        // #    ##    ##    ###
+        //  #  #  #  #  #  #
+        private static bool SeaMonsterAtOffset(Coordinates start, string[] image)
         {
-            Tile firstTile;
-            if (!outerLayer.HasValue)
+            var expectedSeaMonsterOffsets = new List<Coordinates>
             {
-                // Randomly select any corner tile to set (no constraints).
-                firstTile = cornerTiles.First();
-            }
-            else
-            {
-                List<IConstraint> constraints = new List<IConstraint>
-                {
-                    new Constraint(Position.L, new[] {outerLayer.Value.Left[1].GetBorder(Opposite(Position.L))}),
-                    new Constraint(Position.T, new[] {outerLayer.Value.Top[1].GetBorder(Opposite(Position.T))})
-                };
-                firstTile = cornerTiles.First(t => t.OrientToSatisfy(constraints));
-            }
-             
-            var tiles = new List<Tile>(edgeTiles);
-            tiles.AddRange(cornerTiles.Except(new List<Tile>{firstTile}));
+                new(0, 1), new(1, 2), new(4, 2), new(7, 2), new (10, 2), new (13, 2), new (16, 2), new (5, 1), 
+                new (6, 1), new (11, 1), new (12, 1), new (18, 0), new (17, 1), new (18, 1), new (19, 1),
+            };
+            var coordinates = expectedSeaMonsterOffsets.Select(
+                o => new Coordinates(start.X + o.X, start.Y + o.Y)).ToList();
+            var size = image.Length;
+            return coordinates.All(c => c.X >= 0 && c.Y >= 0 && c.X < size && c.Y < size && image[c.Y][c.X] == '#');
+        }
 
-            var setTiles = new List<Tile>{firstTile};
-            var currentTile = firstTile;
-            while (tiles.Any())
-            {
-                var current = currentTile;
-                var possibleNextTiles = tiles.Where(t => t.BordersWithAdjacents.Any(
-                    candidate => current.AllBorderCombinations.Contains(candidate))).ToList();
-                // if (possibleNextTiles.Count > 1) throw new Exception("cry.");
-                var matchingTile = possibleNextTiles.First();
-                setTiles.Add(matchingTile);
-                tiles.Remove(matchingTile);
-                currentTile = matchingTile;
-            }
+        private static Arrangement Arrange(List<Tile> tiles)
+        {
+            var corners = FindCorners(tiles);
+            var topLeftCorner = corners[0];
+            var topLeftCornerOrientation = FindOrientationForTopLeftCorner(topLeftCorner, tiles);
+            topLeftCorner.ApplyBorderOrientation(topLeftCornerOrientation);
+            var dimensions = (int) Math.Sqrt(tiles.Count);
             
-            var dimSize = (setTiles.Count / 4) + 1;
-            setTiles.Add(firstTile); // The final corner is also the first corner - so add it here.
-            var borders = new List<Tile[]>();
-            for (var i = 0; i < 4; i++)
-            {
-                borders.Add(setTiles.Skip(i * (dimSize - 1)).Take(dimSize).ToArray());
-            }
-
-            // Border tiles are left->right, top->bottom (hence bottom and left row are reversed here).
-            //N.B. tiles are in the correct position, but not oriented correctly yet.
-            return new ArrangedBorders(borders[0], borders[1], borders[2].Reverse().ToArray(), borders[3].Reverse().ToArray());
-        }
-
-        public interface IConstraint
-        {
-            bool Satisfies(Tile tile);
-        }
-
-        public struct Constraint : IConstraint
-        {
-            private readonly Position _position;
-            private readonly TileBorder[] _mustBeIn;
-
-            public Constraint(Position position, TileBorder[] mustBeIn)
-            {
-                _position = position;
-                _mustBeIn = mustBeIn;
-            }
+            var initialSetupWithCorner = new Tile[dimensions, dimensions];
+            initialSetupWithCorner[0, 0] = topLeftCorner;
+            var remainingTiles = new List<Tile>(tiles);
+            remainingTiles.Remove(topLeftCorner);
             
-            public bool Satisfies(Tile tile)
+            var done = new List<Arrangement>();
+            var initialArrangement = new Arrangement(initialSetupWithCorner, remainingTiles);
+            var candidates = new Queue<Arrangement>(new List<Arrangement> {initialArrangement});
+            while (candidates.Count > 0)
             {
-                return  _mustBeIn.Contains(tile.GetBorder(_position));
-            }
-
-            public override string ToString()
-            {
-                return $"{_position}: {string.Join(" | ", _mustBeIn)}";
-            }
-        }
-
-        public static Tile OrientFinalCentreTile(Tile tile, ArrangedBorders? outerLayer)
-        {
-            List<IConstraint> constraints = new List<IConstraint>();
-
-            if (!outerLayer.HasValue) throw new Exception("Must have an outer layer (unless only one tile in input).");
-            constraints.Add(new Constraint(Position.T, new []{outerLayer.Value.Top[1].GetBorder(Opposite(Position.T))}));
-            constraints.Add(new Constraint(Position.R, new []{outerLayer.Value.Right[1].GetBorder(Opposite(Position.R))}));
-            constraints.Add(new Constraint(Position.B, new []{outerLayer.Value.Bottom[1].GetBorder(Opposite(Position.B))}));
-            constraints.Add(new Constraint(Position.L, new []{outerLayer.Value.Left[1].GetBorder(Opposite(Position.L))}));
-            if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-            return tile;
-        }
-
-        public static Tile[,] OrientTilesInBorders(ArrangedBorders borders, ArrangedBorders? outerLayer, Tile[,] arrangement)
-        {
-            List<IConstraint> constraints = new List<IConstraint>();
-            var borderLength = borders.Top.Length;
-
-            /* Top border */
-            for (var i = 0; i < borderLength; i++)
-            {
-                constraints.Clear();
-                var tile = borders.Top[i];
-                // First tile is a corner. 
-                if (i == 0)
+                var next = candidates.Dequeue();
+                if (next.Done)
                 {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.L, new []{outerLayer.Value.Left[i+1].GetBorder(Opposite(Position.L))}));
-                        constraints.Add(new Constraint(Position.T, new []{outerLayer.Value.Top[1].GetBorder(Opposite(Position.T))}));
-                    }
-                    constraints.Add(new Constraint(Position.B, borders.Left[1].AllBorderCombinations ));
-                    constraints.Add(new Constraint(Position.R, borders.Top[1].AllBorderCombinations));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[i, 0] = tile;
-                } 
-                else if (i == borderLength - 1)
-                {
-                    // Final tile is oriented by next border orientation.
+                    done.Add(next);
                 }
-                // Edge tile.
                 else
                 {
-                    if (outerLayer.HasValue)
+                    foreach (var possibility in FitOneTile(next))
                     {
-                        constraints.Add(new Constraint(Position.T, new []{outerLayer.Value.Top[i+1].GetBorder(Opposite(Position.T))}));
-                    }
-                    constraints.Add(new Constraint(Position.L, new [] {arrangement[i-1,0].GetBorder(Opposite(Position.L))}));
-                    constraints.Add(new Constraint(Position.R, borders.Top[i+1].AllBorderCombinations));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[i, 0] = tile;
+                        candidates.Enqueue(possibility);
+                    }                    
                 }
             }
 
-            /* Right border */
-            for (var i = 0; i < borderLength; i++)
+            if (done.Count != 1)
             {
-                constraints.Clear();
-                var tile = borders.Right[i];
-                // First tile is a corner. 
-                if (i == 0)
-                {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.T, new []{outerLayer.Value.Top[i+1].GetBorder(Opposite(Position.T))}));
-                        constraints.Add(new Constraint(Position.R, new []{outerLayer.Value.Right[1].GetBorder(Opposite(Position.R))}));
-                    }
-                    constraints.Add(new Constraint(Position.B, borders.Right[i+1].AllBorderCombinations));
-                    constraints.Add(new Constraint(Position.L, new [] {arrangement[borderLength-2,i].GetBorder(Opposite(Position.L))}));
-
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[borderLength-1, i] = tile;
-                } 
-                else if (i == borderLength - 1)
-                {
-                    // Final tile is oriented by next border orientation.
-                }
-                // Edge tile.
-                else
-                {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.R, new []{outerLayer.Value.Right[i+1].GetBorder(Opposite(Position.R))}));
-                    }
-                    constraints.Add(new Constraint(Position.T, new [] {arrangement[borderLength-1,i-1].GetBorder(Opposite(Position.T))}));
-                    constraints.Add(new Constraint(Position.B, borders.Right[i+1].AllBorderCombinations));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[borderLength-1, i] = tile;
-                }
-            }
-            
-            /* Bottom border */
-            for (var i = borderLength-1; i >= 0; i--)
-            {
-                constraints.Clear();
-                var tile = borders.Bottom[i];
-                if (i == 0)
-                {
-                    // Final tile is oriented by next border orientation.
-                } 
-                // Last tile is also a corner.
-                else if (i == borderLength - 1)
-                {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.R, new []{outerLayer.Value.Right[i+1].GetBorder(Opposite(Position.R))}));
-                        constraints.Add(new Constraint(Position.B, new []{outerLayer.Value.Bottom[i+1].GetBorder(Opposite(Position.B))}));
-                    }
-                    constraints.Add(new Constraint(Position.L, borders.Bottom[i-1].AllBorderCombinations));
-                    constraints.Add(new Constraint(Position.T, new [] {arrangement[i,borderLength-2].GetBorder(Opposite(Position.T))}));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[i, borderLength-1] = tile;
-                }
-                // Edge tile.
-                else
-                {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.B, new []{outerLayer.Value.Bottom[i+1].GetBorder(Opposite(Position.B))}));
-                    }
-                    constraints.Add(new Constraint(Position.L, borders.Bottom[i-1].AllBorderCombinations));
-                    constraints.Add(new Constraint(Position.R, new [] {arrangement[i+1,borderLength-1].GetBorder(Opposite(Position.R))}));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[i, borderLength-1] = tile;
-                }
-            }
-            
-            /* Left border */
-            for (var i = borderLength-1; i >= 0; i--)
-            {
-                constraints.Clear();
-                var tile = borders.Left[i];
-                if (i == 0)
-                {
-                    // Final tile is oriented by next border orientation.
-                } 
-                // Bottom-left corner.
-                else if (i == borderLength - 1)
-                {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.L, new []{outerLayer.Value.Left[i+1].GetBorder(Opposite(Position.L))}));
-                        constraints.Add(new Constraint(Position.B, new []{outerLayer.Value.Bottom[i+1].GetBorder(Opposite(Position.B))}));
-                    }
-                    constraints.Add(new Constraint(Position.T, borders.Left[i-1].AllBorderCombinations));
-                    constraints.Add(new Constraint(Position.R, new [] {arrangement[1,borderLength-1].GetBorder(Opposite(Position.R))}));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[0, i] = tile;
-                }
-                // Edge tile.
-                else
-                {
-                    if (outerLayer.HasValue)
-                    {
-                        constraints.Add(new Constraint(Position.L, new []{outerLayer.Value.Left[i+1].GetBorder(Opposite(Position.L))}));
-                    }
-                    constraints.Add(new Constraint(Position.T, borders.Left[i-1].AllBorderCombinations));
-                    constraints.Add(new Constraint(Position.B, new [] {arrangement[0,i+1].GetBorder(Opposite(Position.B))}));
-                    if (!tile.OrientToSatisfy(constraints)) throw new Exception("Cannot orient tile to match constraints :(");
-                    arrangement[0, i] = tile;
-                }
+                throw new Exception($"Unexpectedly found multiple ({done.Count}) possible arrangements!");
             }
 
-            return arrangement;
+            return done.First();
         }
-
-        public static Position Opposite(Position pos)
+        
+        private record Arrangement(Tile[,] Arranged, List<Tile> Unarranged)
         {
-            switch (pos)
+            internal bool Done => Unarranged.Count == 0;
+
+            internal ulong ProductOfCornerTileIds()
             {
-                case Position.B:
-                    return Position.T;
-                case Position.T:
-                    return Position.B;
-                case Position.L:
-                    return Position.R;
-                case Position.R:
-                    return Position.L;
-                default:
-                    throw new Exception($"Unknown: {pos}");
+                var d = Arranged.GetLength(0);
+                return Convert.ToUInt64(Arranged[0, 0].TileId) * Convert.ToUInt64(Arranged[0, d-1].TileId) * 
+                       Convert.ToUInt64(Arranged[d-1, 0].TileId) * Convert.ToUInt64(Arranged[d-1, d-1].TileId);
+            }
+
+            internal string[] ExtractImage()
+            {
+                var image = new List<string>();
+                var nTiles = Arranged.GetLength(0);
+                for (var x = 0; x < nTiles; x++)
+                {
+                    for (var y = 0; y < nTiles; y++)
+                    {
+                        var orientedTile = Arranged[y, x].ApplyOrientation(Arranged[y, x].Orientation);
+                        var tileImageSize = Arranged[y, x].Size - 2;
+                        for (var i = 0; i < tileImageSize; i++)
+                        {
+                            var nthTileImageRow = y * tileImageSize + i;
+                            if (image.Count <= nthTileImageRow) image.Add(string.Empty);
+                            image[nthTileImageRow] += orientedTile[1 + i].Substring(1, tileImageSize);
+                        }
+                    }
+                }
+                return image.ToArray();
+            }
+        }
+
+        private static List<Arrangement> FitOneTile(Arrangement arrangement)
+        {
+            var nextCoords = NextTileCoordinates(arrangement.Arranged);
+            var nextRequirements = GetRequirements(arrangement.Arranged, nextCoords);
+            var viableNextTile = new List<Tuple<Tile, TileOrientation>>();
+            foreach (var candidate in arrangement.Unarranged)
+            {
+                foreach (var orientation in TileOrientation.AllOrientations())
+                {
+                    candidate.ApplyBorderOrientation(orientation);
+                    if (TileSatisfiesRequirements(candidate, nextRequirements))
+                    {
+                        viableNextTile.Add(new Tuple<Tile, TileOrientation>(candidate, orientation));
+                    }
+                }
             }
             
+            var possibleArrangements = new List<Arrangement>();
+            foreach (var nextTile in viableNextTile)
+            {
+                var newArrangement = new Arrangement(
+                    DeepCopy(arrangement.Arranged), new List<Tile>(arrangement.Unarranged));
+                var newTile = nextTile.Item1.Copy();
+                newTile.ApplyBorderOrientation(nextTile.Item2);
+                newArrangement.Arranged[nextCoords.Y, nextCoords.X] = newTile;
+                newArrangement.Unarranged.Remove(nextTile.Item1);
+                possibleArrangements.Add(newArrangement);
+            }
+
+            return possibleArrangements;
         }
+
+        private static bool TileSatisfiesRequirements(Tile tile, Dictionary<Position, TileBorder> requirements)
+        {
+            foreach (var (position, requiredBorder) in requirements)
+            {
+                if (!tile.GetBorder(position).Equals(requiredBorder))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static Coordinates NextTileCoordinates(Tile[,] arranged)
+        {
+            for (var y = 0; y < arranged.GetLength(1); y++)
+            {
+                for (var x = 0; x < arranged.GetLength(0); x++)    
+                {
+                    if (arranged[y, x] == null)
+                    {
+                        return new Coordinates(x, y);
+                    }
+                }
+            }
+            throw new Exception("Tile arrangement complete!");
+        }
+
+        private static Dictionary<Position, TileBorder> GetRequirements(Tile[,] arranged, Coordinates coordinates)
+        {
+            var size = arranged.GetLength(0);
+            var requirements = new Dictionary<Position, TileBorder>();
+            var top = coordinates with { Y = coordinates.Y - 1 };
+            if (top.Y >= 0 && arranged[top.Y, top.X] != null)
+            {
+                requirements[Position.T] = arranged[top.Y, top.X].GetBorder(Position.B);
+            }
+            var bottom = coordinates with { Y = coordinates.Y + 1 };
+            if (bottom.Y < size && arranged[bottom.Y, bottom.X] != null)
+            {
+                requirements[Position.B] = arranged[bottom.Y, bottom.X].GetBorder(Position.T);
+            }
+            var left = coordinates with { X = coordinates.X - 1 };
+            if (left.X >= 0 && arranged[left.Y, left.X] != null)
+            {
+                requirements[Position.L] =  arranged[left.Y, left.X].GetBorder(Position.R);
+            }
+            var right = coordinates with { X = coordinates.X + 1 };
+            if (right.X < size && arranged[right.Y, right.X] != null)
+            {
+                requirements[Position.R] = arranged[right.Y, right.X].GetBorder(Position.L);
+            }
+
+            return requirements;
+        }
+
+        private record Coordinates(int X, int Y);
+        
         public enum Position { T = 0, R = 1, B = 2, L = 3 } // Top, Right, Bottom, Left.
-
-        public struct ArrangedBorders
+        
+        private static List<Tile> FindCorners(List<Tile> tiles)
         {
-            // Tiles are always left->right, top->bottom (for each orientation).
-            public Tile[] Left;
-            public Tile[] Right;
-            public Tile[] Top;
-            public Tile[] Bottom;
-
-            public ArrangedBorders(Tile[] t, Tile[] r, Tile[] b, Tile[] l)
+            var corners = new List<Tile>();
+            foreach (var tile in tiles)
             {
-                Left = l;
-                Right = r;
-                Top = t;
-                Bottom = b;
+                var matchingBorders = tile.AllBorderCombinations.Count(
+                    tb => !tiles.Any(t => t.AllBorderCombinations.Contains(tb) && tile.TileId != t.TileId));
+                if (matchingBorders == 4)
+                {
+                    corners.Add(tile);
+                }
             }
+            return corners;
         }
 
-        public static Dictionary<int, List<Tile>> AnalyseTiles(Tile[] tiles)
+        private static TileOrientation FindOrientationForTopLeftCorner(Tile corner, List<Tile> allTiles)
         {
-            var tilesWithNMatchingBorders = new Dictionary<int, List<Tile>>();
-            foreach (var tile in tiles.ToArray())
+            var uniqueBorders =  corner.AllBorderCombinations.Where(
+                tb => !allTiles.Any(t => t.AllBorderCombinations.Contains(tb) && corner.TileId != t.TileId)).ToList();
+            foreach (var orientation in TileOrientation.AllOrientations())
             {
-                var matchingBorders = tile.AllBorderCombinations.Where(
-                b => tiles.Any(t => t.AllBorderCombinations.Contains(b) && tile.TileId != t.TileId)).ToArray();
-                tile.SetAdjacents(matchingBorders.ToArray());
-                var nMatchingBorders = matchingBorders.Length / 2;
-                
-                if (!tilesWithNMatchingBorders.ContainsKey(nMatchingBorders)) {tilesWithNMatchingBorders[nMatchingBorders] = new List<Tile>();}
-                tilesWithNMatchingBorders[nMatchingBorders].Add(tile);
+                corner.ApplyBorderOrientation(orientation);
+                if (uniqueBorders.Contains(corner.GetBorder(Position.L)) && 
+                    uniqueBorders.Contains(corner.GetBorder(Position.T)))
+                {
+                    return orientation;
+                }
             }
-            return tilesWithNMatchingBorders;
+            throw new Exception($"Failed to find appropriate {nameof(TileOrientation)} for corner tile!");
         }
 
-        private static Tile[] ParseTiles(string[] inputs)
+        private static Tile[,] DeepCopy(Tile[,] original)
+        {
+            var rows = original.GetLength(0);
+            var cols = original.GetLength(1);
+            var copy = new Tile[rows, cols];
+            for (var i = 0; i < rows; i++)
+            {
+                for (var j = 0; j < cols; j++)
+                {
+                    var originalTile = original[i, j];
+                    if (originalTile == null)
+                    {
+                        continue;
+                    }
+
+                    copy[i, j] = originalTile.Copy();
+                }
+            }
+            return copy;
+        }
+        
+        private static List<Tile> ParseTiles(string[] inputs)
         {
             var currentTileId = 0;
             var currentTile = new List<string>();
@@ -374,10 +301,10 @@ namespace AdventOfCode2020
                     currentTile.Add(line);
                 }
             }
-            return currentTiles.ToArray();
+            return currentTiles;
         }
 
-        public struct TileBorder : IEquatable<TileBorder>
+        public readonly struct TileBorder : IEquatable<TileBorder>
         {
             private readonly char[] _raw;
             public readonly int Original;
@@ -397,7 +324,7 @@ namespace AdventOfCode2020
                 Flipped = flipped;
             }
 
-            public TileBorder Flip()
+            public TileBorder Reverse()
             {
                 return new TileBorder(_raw.Reverse().ToArray());
             }
@@ -409,7 +336,7 @@ namespace AdventOfCode2020
 
             private static int ConvertFromTileElems(char[] elems)
             {
-                return Convert.ToInt32(string.Concat(elems.Select(i => i == '#' ? 1 : 0)), 2);
+                return Convert.ToInt32(string.Concat(elems.Take(32).Select(i => i == '#' ? 1 : 0)), 2);
             }
 
             public bool Equals(TileBorder other)
@@ -425,26 +352,24 @@ namespace AdventOfCode2020
             public override string ToString() => string.Join("", _raw);
         }
 
-        public struct TileOrientation
+        internal struct TileOrientation
         {
-            public int ClockwiseRotation;
-            public bool HorizontalFlipped;
-            
-            public void Rotate(int times) { ClockwiseRotation = (ClockwiseRotation + times) % 4; }
-            public void HorizontalFlip() { HorizontalFlipped = false; }
+            public readonly int Rotations;
+            // This always means flipped horizontally. A vertical flip is equivalent to a horizontal flip + two rotations.
+            public readonly bool Flipped;
 
-            public TileOrientation(int rotation, bool horizontalFlip)
+            public TileOrientation(int rotation, bool flip)
             {
-                ClockwiseRotation = rotation;
-                HorizontalFlipped = horizontalFlip;
+                Rotations = rotation;
+                Flipped = flip;
             }
 
-            public static List<TileOrientation> GetPossibleOrientations()
+            public static List<TileOrientation> AllOrientations()
             {
                 var orientations = new List<TileOrientation>();
-                foreach (var flipHorizontally in new[] {false, true})
+                for (var rotation = 0; rotation < 4; rotation++)
                 {
-                    for (var rotation = 0; rotation < 4; rotation++)
+                    foreach (var flipHorizontally in new[] {false, true})    
                     {
                         orientations.Add(new TileOrientation(rotation, flipHorizontally)); 
                     }
@@ -453,101 +378,62 @@ namespace AdventOfCode2020
             }
         }
 
-        public class Tile
+        internal class Tile
         {
             public int TileId;
             public string[] Raw;
 
-            private TileBorder _originalTop;
-            private TileBorder _originalRight;
-            private TileBorder _originalBottom;
-            private TileBorder _originalLeft;
-
             public TileBorder[] OriginalBorders; // Always in order: T, R, B, L
             public TileBorder[] Borders;
             public TileBorder[] AllBorderCombinations;
-            public TileBorder[] BordersWithAdjacents;
 
-            public TileOrientation Orientation;
+            public TileOrientation Orientation { get; private set; }
+            public int Size => Raw.Length;
 
-
-            public Tile(List<string> rows, int tileId)
+            internal Tile(List<string> rows, int tileId, TileOrientation orientation = new())
             {
                 TileId = tileId;
                 Raw = rows.ToArray();
+                Orientation = orientation;
                 
-                _originalLeft   = new TileBorder(rows.Select(r => r[0]).ToArray());
-                _originalRight  = new TileBorder(rows.Select(r => r[rows.Count - 1]).ToArray());
-                _originalTop    = new TileBorder(rows[0].ToCharArray());
-                _originalBottom = new TileBorder(rows[^1].ToCharArray());
+                var originalLeft = new TileBorder(rows.Select(r => r[0]).ToArray());
+                var originalRight = new TileBorder(rows.Select(r => r[rows.Count - 1]).ToArray());
+                var originalTop = new TileBorder(rows[0].ToCharArray());
+                var originalBottom = new TileBorder(rows[^1].ToCharArray());
                 
-                Orientation = new TileOrientation();
-                OriginalBorders = new[] {_originalTop, _originalRight, _originalBottom, _originalLeft};
+                OriginalBorders = new[] {originalTop, originalRight, originalBottom, originalLeft};
                 AllBorderCombinations = new[] { 
-                    _originalTop, _originalTop.Flip(),_originalRight, _originalRight.Flip(),
-                    _originalBottom, _originalBottom.Flip(), _originalLeft, _originalLeft.Flip()  };
-                Borders = OriginalBorders;
+                    originalTop, originalTop.Reverse(),originalRight, originalRight.Reverse(),
+                    originalBottom, originalBottom.Reverse(), originalLeft, originalLeft.Reverse()  };
+                Borders = new[] {originalTop, originalRight, originalBottom, originalLeft};;
+                ApplyBorderOrientation(Orientation);
             }
-
-            public void SetAdjacents(TileBorder[] bordersWithAdjacents)
+            
+            public void ApplyBorderOrientation(TileOrientation orientation)
             {
-                BordersWithAdjacents = bordersWithAdjacents;
-            }
-
-            public bool OrientToSatisfy(IList<IConstraint> constraints)
-            {
-                foreach (var orientation in TileOrientation.GetPossibleOrientations())
+                for (var sourceIdx = 0; sourceIdx < 4; sourceIdx++)
                 {
-                    Orient(orientation);
-                    if (constraints.All(c => c.Satisfies(this)))
+                    var targetIdxAfterFlip = orientation.Flipped && sourceIdx % 2 == 0 ? (sourceIdx + 2) % 4 : sourceIdx;
+                    var reversalDueToFlip = orientation.Flipped && sourceIdx is 1 or 3;
+                    var targetIdx = (targetIdxAfterFlip + orientation.Rotations) % 4;
+                    var reversalDueToRotation = 
+                        (targetIdxAfterFlip is 0 or 1 && targetIdx is 2 or 3) || 
+                        (targetIdxAfterFlip is 2 or 3 && targetIdx is 0 or 1);
+
+                    var border = OriginalBorders[sourceIdx];
+                    if (reversalDueToFlip)
                     {
-                        return true;
+                        border = border.Reverse();
                     }
-                }
-                return false;
-            }
-
-            public void Orient(TileOrientation orientation)
-            {
-                var oriented = new TileBorder[4];
-                // Rotation.
-                for (var borderPos = 0; borderPos < 4; borderPos++)
-                {
-                    bool flip;
-                    switch (orientation.ClockwiseRotation % 4)
+                    if (reversalDueToRotation)
                     {
-                        case 0:
-                            flip = false;
-                            break;
-                        case 1:
-                            flip = borderPos == 1 || borderPos == 3;
-                            break;
-                        case 2:
-                            flip = true;
-                            break;
-                        case 3:
-                            flip = borderPos == 0 || borderPos == 2;
-                            break;
-                        default:
-                            throw new Exception("Not possible.");
+                        border = border.Reverse();
                     }
-
-                    var flippedOrNot = flip ? OriginalBorders[borderPos].Flip() : OriginalBorders[borderPos];
-                    oriented[(borderPos + orientation.ClockwiseRotation) % 4] = flippedOrNot;
-                }
-                // Horizontal flip.
-                if (orientation.HorizontalFlipped)
-                {
-                    var tempA = oriented[0];
-                    oriented[0] = oriented[2];
-                    oriented[2] = tempA;
-                    oriented[1] = oriented[1].Flip();
-                    oriented[3] = oriented[3].Flip();
+                    Borders[targetIdx] = border;
                 }
                 Orientation = orientation;
-                Borders = oriented;
             }
-
+            
             public TileBorder GetBorder(Position pos)
             {
                 return Borders[(int) pos];
@@ -557,7 +443,75 @@ namespace AdventOfCode2020
             {
                 return TileId.ToString();
             }
+
+            internal Tile Copy()
+            {
+                return new Tile(Raw.ToList(), TileId, Orientation);
+            }
+
+            internal string[] ApplyOrientation(TileOrientation orientation)
+            {
+                var size = Raw.Length;
+                var result = new char[size, size];
+
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        result[y, x] = Raw[y][x];
+                    }
+                }
+
+                if (orientation.Flipped)
+                {
+                    result = HorizontalFlip(result);
+                }
+                for (var i = 0; i < orientation.Rotations; i++)
+                {
+                    result = Rotate(result);
+                }
+                
+                var converted = new string[size];
+                for (var y = 0; y < size; y++)
+                {
+                    var rowChars = new char[size];
+                    for (var x = 0; x < size; x++)
+                    {
+                        rowChars[x] = result[y, x];
+                    }
+                    converted[y] = new string(rowChars);
+                }
+                
+                return converted;
+            }
+
+            private static char[,] Rotate(char[,] input)
+            {
+                var size = input.GetLength(0);
+                var result = new char[size, size]; 
+                for (var x = 0; x < size; x++)
+                {
+                    for (var y = 0; y < size; y++)
+                    {
+                        result[y, x] = input[size - x - 1, y];
+                    }
+                }
+                return result;
+            }
+
+            private static char[,] HorizontalFlip(char[,] input)
+            {
+                var size = input.GetLength(0);
+                var result = new char[size, size]; 
+                for (var x = 0; x < size; x++)
+                {
+                    for (var y = 0; y < size; y++)
+                    {
+                        result[y, x] = input[size - y - 1, x];
+                    }
+                }
+                return result;
+            }
         }
-        
     }
 }
