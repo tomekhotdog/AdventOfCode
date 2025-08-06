@@ -7,7 +7,7 @@ namespace AdventOfCode2020
         static void Main(string[] args)
         {
             Console.WriteLine("Hello Advent of Code!");
-            Q24.Solve();
+            Q25.Solve();
         }
     }
 }
