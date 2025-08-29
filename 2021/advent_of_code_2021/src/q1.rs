@@ -12,22 +12,20 @@ pub fn solution() {
 }
 
 fn read_input() -> Vec<u64> {
-        let input = include_str!("../inputs/q1.txt");
-        input
-            .trim()
-            .split('\n')
-            .map(|l| str::parse::<u64>(l).unwrap())
-            .collect::<Vec<u64>>()
+    // base path is the crate root; this works from anywhere
+    let input = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/inputs/q1.txt"));
+    input
+        .lines()
+        .map(|l| l.parse::<u64>().expect("bad number"))
+        .collect()
 }
 
-fn part_1(measurements: &Vec<u64>) -> usize {
-	return measurements.windows(2).filter(|x| x[1] > x[0]).count();
+fn part_1(measurements: &[u64]) -> usize {
+    measurements.windows(2).filter(|w| w[1] > w[0]).count()
 }
 
-fn part_2(measurements: &Vec<u64>) -> usize {
-	// Comparing the sum of triples: [A B C] [B C D]. 
-	// We can inspect just the first element of the first triple and last element of second.
-	return measurements.windows(4).filter(|x| (x[3]) > x[0]).count()
+fn part_2(measurements: &[u64]) -> usize {
+    // Compare [A B C] vs [B C D] by A vs D
+    measurements.windows(4).filter(|w| w[3] > w[0]).count()
 }
-
 

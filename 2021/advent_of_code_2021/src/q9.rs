@@ -27,18 +27,26 @@ fn print(grid: &Vec<Vec<u32>>) {
 }
 
 fn low_points(grid: &Vec<Vec<u32>>) -> Vec<(usize, usize)> {
-	let mut low_points: Vec<(usize, usize)> = Vec::new();
-	for (y, row) in grid.into_iter().enumerate() {
-		for (x, current) in row.into_iter().enumerate() {
-			let north = if y == 0 { None } else { Some(grid[y-1][x]) };
-			let south = if y == grid.len() - 1 { None } else { Some(grid[y+1][x]) };
-			let west  = if x == 0 { None } else { Some(grid[y][x-1]) };
-			let east  = if x == row.len() - 1 { None } else { Some(grid[y][x+1]) };
-			let low_point = vec![north, south, west, east].into_iter().all(|adjacent| adjacent.is_none() || adjacent.unwrap() > *current);
-			if low_point { low_points.push((x, y)); }
-		}
-	}
-	return low_points;
+    let mut lows = Vec::new();
+
+    for (y, row) in grid.iter().enumerate() {
+        for (x, &current) in row.iter().enumerate() {
+            let north = if y == 0 { None } else { Some(grid[y - 1][x]) };
+            let south = if y + 1 == grid.len() { None } else { Some(grid[y + 1][x]) };
+            let west  = if x == 0 { None } else { Some(row[x - 1]) };
+            let east  = if x + 1 == row.len() { None } else { Some(row[x + 1]) };
+
+            let is_low = [north, south, west, east]
+                .iter()
+                .all(|adj| adj.map_or(true, |v| v > current));
+
+            if is_low {
+                lows.push((x, y));
+            }
+        }
+    }
+
+    lows
 }
 
 // Calculate the 'risk level' of the low points.
@@ -57,8 +65,7 @@ fn find_basin_neighbours(grid: &Vec<Vec<u32>>, x: usize, y: usize, basin_elems: 
 	let west  = if x == 0 { None } else { Some((y,x-1)) };
 	let east  = if x == grid[0].len() - 1 { None } else { Some((y,x+1)) };
 
-	let coordinates = vec![north, south, west, east];
-	for coordinate in coordinates.into_iter() {
+	for coordinate in [north, south, west, east].iter() {
 		if coordinate.is_none() { continue; }
 		let (y1,x1) = coordinate.unwrap();
 		if grid[y][x] < grid[y1][x1] { find_basin_neighbours(&grid, x1, y1, basin_elems) }

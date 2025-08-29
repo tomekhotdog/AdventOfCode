@@ -96,7 +96,7 @@ fn map_display(display: Vec<char>, segment_map: &HashMap<char, char>) -> Vec<cha
 
 fn calculate_display_value(input: &String, segments: &HashMap<char, char>) -> i64 {
 	let mapped: Vec<char> = map_display(input.chars().into_iter().collect::<Vec<char>>(), &segments);
-	println!("mapped: {:?}", mapped);
+	// println!("mapped: {:?}", mapped);
 	if mapped.len() == 6 {
 		if !mapped.contains(&'d') {
 			return 0;
