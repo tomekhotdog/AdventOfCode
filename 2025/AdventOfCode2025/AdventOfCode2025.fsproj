@@ -7,9 +7,11 @@
 
     <ItemGroup>
         <Compile Include="Q01.fs" />
+        <Compile Include="Q02.fs" />
         <Compile Include="Common.fs" />
         <Compile Include="Program.fs" />
         <Content Include="inputs\q01.txt" />
+        <Content Include="inputs\q01_example.txt" />
     </ItemGroup>
 
 </Project>
