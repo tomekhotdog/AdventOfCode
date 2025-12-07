@@ -28,6 +28,10 @@ let main argv =
     let runDay day part =
         match day with
         | 1 -> Q01.run part
+        | 2 -> Q02.run part
+        | 3 -> Q03.run part
+        | 4 -> Q04.run part
+        | 7 -> Q07.run part
         // ...
         | _ -> failwithf "Day %d not implemented yet" day
 
