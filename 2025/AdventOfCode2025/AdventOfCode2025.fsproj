@@ -11,6 +11,7 @@
         <Compile Include="Q03.fs" />
         <Compile Include="Q04.fs" />
         <Compile Include="Q07.fs" />
+        <Compile Include="Q08.fs" />
         <Compile Include="Common.fs" />
         <Compile Include="Program.fs" />
         <Content Include="inputs\q01.txt" />
@@ -19,6 +20,8 @@
         <Content Include="inputs\q02.txt" />
         <Content Include="inputs\q07.txt" />
         <Content Include="inputs\q07_example.txt" />
+        <Content Include="inputs\q08_example.txt" />
+        <Content Include="inputs\q08.txt" />
     </ItemGroup>
 
 </Project>

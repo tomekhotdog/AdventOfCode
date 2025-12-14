@@ -32,6 +32,7 @@ let main argv =
         | 3 -> Q03.run part
         | 4 -> Q04.run part
         | 7 -> Q07.run part
+        | 8 -> Q08.run part
         // ...
         | _ -> failwithf "Day %d not implemented yet" day
 
