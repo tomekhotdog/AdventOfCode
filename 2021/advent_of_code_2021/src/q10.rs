@@ -22,3 +22,13 @@ fn part_1() -> u32 {
 fn part_2() -> u32 {
 	return 0;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn sample() {
+        assert_eq!(part_1(), 0);
+        assert_eq!(part_2(), 1);
+    }
+}
