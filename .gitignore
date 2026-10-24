@@ -35,3 +35,8 @@ msbuild.wrn
 
 # Visual Studio 2015
 .vs/
+# Rust build output
+target/
+
+# Local editor settings
+2021/advent_of_code_2021/settings.json
