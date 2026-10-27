@@ -21,6 +21,8 @@
         <Content Include="inputs\q02.txt" />
         <Content Include="inputs\q03_example.txt" />
         <Content Include="inputs\q03.txt" />
+        <Content Include="inputs\q04_example.txt" />
+        <Content Include="inputs\q04.txt" />
         <Content Include="inputs\q07.txt" />
         <Content Include="inputs\q07_example.txt" />
         <Content Include="inputs\q08_example.txt" />

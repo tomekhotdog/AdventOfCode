@@ -5,6 +5,9 @@ def read_input(filename: str) -> List[str]:
     with open('inputs/' + filename, 'r') as reader:
         return reader.read().splitlines()
 
+def read_input_grid(filename: str) -> List[List[str]]:
+    with open('inputs/' + filename, 'r') as reader:
+        return [list(line) for line in reader.read().splitlines()]
 
 def read_input_string(filename: str) -> str:
     with open('inputs/' + filename, 'r') as reader:
