@@ -32,6 +32,7 @@ let main argv =
         | 3 -> Q03.run part
         | 4 -> Q04.run part
         | 5 -> Q05.run part
+        | 6 -> Q06.run part
         | 7 -> Q07.run part
         | 8 -> Q08.run part
         | 10 -> Q10.run part

@@ -11,6 +11,7 @@
         <Compile Include="Q03.fs" />
         <Compile Include="Q04.fs" />
         <Compile Include="Q05.fs" />
+        <Compile Include="Q06.fs" />
         <Compile Include="Q07.fs" />
         <Compile Include="Q08.fs" />
         <Compile Include="Q10.fs" />
@@ -26,6 +27,8 @@
         <Content Include="inputs\q04.txt" />
         <Content Include="inputs\q05_example.txt" />
         <Content Include="inputs\q05.txt" />
+        <Content Include="inputs\q06_example.txt" />
+        <Content Include="inputs\q06.txt" />
         <Content Include="inputs\q07.txt" />
         <Content Include="inputs\q07_example.txt" />
         <Content Include="inputs\q08_example.txt" />
